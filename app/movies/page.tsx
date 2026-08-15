@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
-//import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 
 type Movie = {
   id: number;
@@ -21,9 +20,10 @@ export default function MoviesPage() {
   const [releaseYear, setReleaseYear] = useState<number | ''>('');
   const [editingId, setEditingId] = useState<number | null>(null);
 
+  // Fetch movies
   const fetchMovies = async () => {
     setLoading(true);
-    // const { data, error } = await supabase
+    const { data, error } = await supabase
       .from('movies')
       .select('*')
       .order('id', { ascending: true });
@@ -40,6 +40,7 @@ export default function MoviesPage() {
     fetchMovies();
   }, []);
 
+  // Delete movie
   const handleDelete = async (id: number) => {
     const { error } = await supabase.from('movies').delete().eq('id', id);
     if (error) {
@@ -49,6 +50,7 @@ export default function MoviesPage() {
     }
   };
 
+  // Add or update movie
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -58,6 +60,7 @@ export default function MoviesPage() {
     }
 
     if (editingId) {
+      // Update movie
       const { error } = await supabase
         .from('movies')
         .update({
@@ -71,6 +74,7 @@ export default function MoviesPage() {
         console.error('Error updating movie:', error.message);
       }
     } else {
+      // Add movie
       const { error } = await supabase.from('movies').insert({
         title,
         actors,
@@ -82,6 +86,7 @@ export default function MoviesPage() {
       }
     }
 
+    // Reset form
     setTitle('');
     setActors('');
     setReleaseYear('');
@@ -90,7 +95,7 @@ export default function MoviesPage() {
     await fetchMovies();
   };
 
-  const handleCancelEdit = () => {
+  const cancelEdit = () => {
     setEditingId(null);
     setTitle('');
     setActors('');
@@ -100,14 +105,11 @@ export default function MoviesPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-4">Movies List</h1>
-      <p className="mb-4 text-gray-700">
-        Manage the Internet Movies Rental Company database: add, edit, and delete movies.
-      </p>
 
       {loading ? (
         <p>Loading movies...</p>
       ) : movies.length === 0 ? (
-        <p>No movies yet. Add one using the form below.</p>
+        <p>No movies yet. Add one below.</p>
       ) : (
         <ul className="space-y-3 mb-6">
           {movies.map((movie) => (
@@ -118,13 +120,13 @@ export default function MoviesPage() {
               <div>
                 <p className="font-semibold text-lg">{movie.title}</p>
                 <p className="text-sm text-gray-700">
-                  <span className="font-medium">Actors:</span> {movie.actors}
+                  <strong>Actors:</strong> {movie.actors}
                 </p>
                 <p className="text-sm text-gray-700">
-                  <span className="font-medium">Release Year:</span>{' '}
-                  {movie.release_year}
+                  <strong>Release Year:</strong> {movie.release_year}
                 </p>
               </div>
+
               <div className="space-x-2">
                 <button
                   className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
@@ -137,6 +139,7 @@ export default function MoviesPage() {
                 >
                   Edit
                 </button>
+
                 <button
                   className="px-3 py-1 bg-red-600 text-white rounded text-sm"
                   onClick={() => handleDelete(movie.id)}
@@ -149,11 +152,12 @@ export default function MoviesPage() {
         </ul>
       )}
 
+      {/* Add/Edit Form */}
       <form
         onSubmit={handleSubmit}
         className="border rounded bg-white p-4 max-w-md space-y-3"
       >
-        <h2 className="text-xl font-semibold mb-2">
+        <h2 className="text-xl font-semibold">
           {editingId ? 'Edit Movie' : 'Add Movie'}
         </h2>
 
@@ -175,7 +179,7 @@ export default function MoviesPage() {
             className="border rounded w-full px-2 py-1 text-sm"
             value={actors}
             onChange={(e) => setActors(e.target.value)}
-            placeholder="Actor 1, Actor 2, Actor 3"
+            placeholder="Actor 1, Actor 2"
           />
         </div>
 
@@ -192,24 +196,22 @@ export default function MoviesPage() {
           />
         </div>
 
-        <div className="mt-2">
-          <button
-            type="submit"
-            className="px-4 py-2 bg-green-600 text-white rounded text-sm"
-          >
-            {editingId ? 'Save Changes' : 'Add Movie'}
-          </button>
+        <button
+          type="submit"
+          className="px-4 py-2 bg-green-600 text-white rounded text-sm"
+        >
+          {editingId ? 'Save Changes' : 'Add Movie'}
+        </button>
 
-          {editingId && (
-            <button
-              type="button"
-              className="ml-2 px-4 py-2 bg-gray-500 text-white rounded text-sm"
-              onClick={handleCancelEdit}
-            >
-              Cancel
-            </button>
-          )}
-        </div>
+        {editingId && (
+          <button
+            type="button"
+            className="ml-2 px-4 py-2 bg-gray-500 text-white rounded text-sm"
+            onClick={cancelEdit}
+          >
+            Cancel
+          </button>
+        )}
       </form>
     </div>
   );
